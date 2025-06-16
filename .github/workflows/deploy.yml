@@ -4,7 +4,12 @@ on: push
 
 jobs:
     build:
-        runs-on: ubuntu-latest
+        runs-on: ${{matrix.os}}
+
+        strategy:
+          matrix:
+            os: [ubuntu-latest, windows-latest]
+            node: [18, 20]
 
         services:
           redis:
@@ -28,7 +33,7 @@ jobs:
             - name: setup
               uses: actions/setup-node@v4
               with:
-                node-version: '18'
+                node-version: ${{ matrix.node }}
 
             - name: Instalar dependencias
               run: npm install
@@ -38,8 +43,9 @@ jobs:
 
             - name: Build page
               run: npm run build
-
+              
             - name: upload artifact
+              if: ${{matrix.os == 'ubuntu-latest' && matrix.node == '18'}}
               uses: actions/upload-pages-artifact@v3
               with:
                 path: public/
@@ -66,6 +72,8 @@ jobs:
       needs: deploy
       if: always()
 
+
+      #Crear app en Slack API y obtener el webhook URL para agregarlo a los secrets del repo como SLACK
       steps:
         - name: Notify to slack
           uses: 8398a7/action-slack@v3
